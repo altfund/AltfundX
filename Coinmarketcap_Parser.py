@@ -19,6 +19,7 @@ years = soup('h2')
 for year in years:
     print(year)
 blocks = []
+valid_url_list = []
 
 fields = [
     "Name",
@@ -52,35 +53,37 @@ for year in years:
                 hyperlink = link['href']
                 valid_url = base_url + hyperlink
 
-                response = requests.get(valid_url)
-                table_soup = bs4.BeautifulSoup(response.text)
-                table = table_soup.find('table')
-                x = (len(table.findAll('tr')) - 1)
-                for row in table.findAll('tr')[1:x]:
-                    col = row.findAll('td')
-                    sample_dict = {}
-                    sample_dict['Name'] = col[1].findAll('a')[1].text
-                    sample_dict['Symbol'] = col[2].getText()
-                    sample_dict['Market Cap'] = clean_symbol(col[3].text.strip())
-                    sample_dict['Price'] = clean_symbol(col[4].find('a').getText())
-                    circulating_supply = col[5].find('a')
-                    if not circulating_supply:
-                        circulating_supply = col[5].find('span')
-                    sample_dict['Circulating Supply'] = clean_symbol(circulating_supply.text.strip())
+                if valid_url not in valid_url_list:
+                    valid_url_list.append(valid_url)
+                    response = requests.get(valid_url)
+                    table_soup = bs4.BeautifulSoup(response.text)
+                    table = table_soup.find('table')
+                    x = (len(table.findAll('tr')) - 1)
+                    for row in table.findAll('tr')[1:x]:
+                        col = row.findAll('td')
+                        sample_dict = {}
+                        sample_dict['Name'] = col[1].findAll('a')[1].text
+                        sample_dict['Symbol'] = col[2].getText()
+                        sample_dict['Market Cap'] = clean_symbol(col[3].text.strip())
+                        sample_dict['Price'] = clean_symbol(col[4].find('a').getText())
+                        circulating_supply = col[5].find('a')
+                        if not circulating_supply:
+                            circulating_supply = col[5].find('span')
+                        sample_dict['Circulating Supply'] = clean_symbol(circulating_supply.text.strip())
 
-                    sample_dict['1h'] = clean_symbol(col[7].getText())
-                    sample_dict['24h'] = clean_symbol(col[8].getText())
-                    sample_dict['7d'] = clean_symbol(col[9].getText())
+                        sample_dict['1h'] = clean_symbol(col[7].getText())
+                        sample_dict['24h'] = clean_symbol(col[8].getText())
+                        sample_dict['7d'] = clean_symbol(col[9].getText())
 
-                    if "*" in col[5].text:
-                        sample_dict['Is Mined'] = False
-                    else:
-                        sample_dict['Is Mined'] = True
+                        if "*" in col[5].text:
+                            sample_dict['Is Mined'] = False
+                        else:
+                            sample_dict['Is Mined'] = True
 
-                    date = valid_url.split("/")[-2]
-                    date = "{}-{}-{}".format(date[:4], date[4:6], date[6:8])
+                        date = valid_url.split("/")[-2]
+                        date = "{}-{}-{}".format(date[:4], date[4:6], date[6:8])
 
-                    sample_dict['Date'] = date
-                    csvwriter.writerow(sample_dict)
+                        sample_dict['Date'] = date
+                        csvwriter.writerow(sample_dict)
 
-                print ("Processed Date:{}".format(date))
+                        print ("Processed Date:{}".format(date))
